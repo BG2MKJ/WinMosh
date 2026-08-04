@@ -16,5 +16,5 @@ pub fn terminal_status() -> &'static str {
 pub use complete_terminal::CompleteTerminal;
 pub use diff::{diff_framebuffers, CellUpdate, TerminalDiff};
 pub use framebuffer::{Framebuffer, FramebufferSize};
-pub use renderer::render_framebuffer;
+pub use renderer::{render_diff, render_framebuffer};
 pub use user_input::{UserEvent, UserInput, UserStream};
