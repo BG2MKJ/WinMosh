@@ -143,7 +143,7 @@ where
             .ok_or(StateSyncError::InvalidInstruction("empty sender history"))?;
         let diff = self.current_state.diff_from(&base.state)?;
         let instruction = TransportInstruction {
-            protocol_version: Some(1),
+            protocol_version: Some(2),
             old_num: Some(base.number),
             new_num: Some(new_number),
             ack_num: Some(self.remote_ack_number),
@@ -270,7 +270,7 @@ where
 
     pub fn ack_instruction(&self) -> TransportInstruction {
         TransportInstruction {
-            protocol_version: Some(1),
+            protocol_version: Some(2),
             old_num: Some(self.last_ack_number),
             new_num: Some(self.last_ack_number),
             ack_num: Some(self.last_ack_number),
@@ -328,7 +328,7 @@ mod tests {
     fn receiver_rejects_missing_base() -> Result<(), Box<dyn std::error::Error>> {
         let mut receiver = StateSyncReceiver::new(ByteState(Vec::new()));
         let instruction = super::TransportInstruction {
-            protocol_version: Some(1),
+            protocol_version: Some(2),
             old_num: Some(99),
             new_num: Some(100),
             ack_num: Some(0),
