@@ -25,10 +25,6 @@ pub fn find_ssh(explicit_path: Option<&Path>) -> Result<PathBuf, ConfigError> {
         )));
     }
 
-    if let Some(path) = process::find_in_path("ssh.exe") {
-        return Ok(path);
-    }
-
     for candidate in common_windows_ssh_paths() {
         if candidate.is_file() {
             return Ok(candidate);
