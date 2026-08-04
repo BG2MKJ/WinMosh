@@ -10,12 +10,12 @@ use winmosh_platform::windows::resize::{current_terminal_size, TerminalSize};
 use winmosh_protocol::crypto::{CryptoSession, SessionKey as ProtocolSessionKey};
 use winmosh_protocol::datagram::ReceiveDisposition;
 use winmosh_protocol::fragment::{FragmentAssembler, FragmentError, Fragmenter};
-use winmosh_protocol::proto::TransportInstruction;
+use winmosh_protocol::proto::{HostInstruction, HostMessage, TransportInstruction};
 use winmosh_protocol::sequence::Direction;
 use winmosh_protocol::statesync::{ReceiveResult, StateSyncReceiver, StateSyncSender};
 use winmosh_protocol::timing::{RttEstimator, TimestampClock};
 use winmosh_protocol::transport::{encrypted_transport, EncryptedTransport, TransportError};
-use winmosh_terminal::{render_diff, CompleteTerminal, Framebuffer, UserInput, UserStream};
+use winmosh_terminal::{CompleteTerminal, UserInput, UserStream};
 
 use crate::cli::GlobalOptions;
 use crate::error::{Error, Result};
@@ -84,7 +84,6 @@ fn run_interactive(global: &GlobalOptions, resolved: ResolvedTarget) -> Result<(
     let mut user_sender = StateSyncSender::new(UserStream::default());
     user_sender.set_state(user_stream.clone());
     let mut last_remote_timestamp = 0_u16;
-    let mut previous_framebuffer: Option<Framebuffer> = None;
     let mut stdout = io::stdout();
     let _raw_mode = RawModeGuard::enter()?;
     stdout.write_all(b"\x1b[2J\x1b[H")?;
@@ -138,14 +137,17 @@ fn run_interactive(global: &GlobalOptions, resolved: ResolvedTarget) -> Result<(
                 user_sender.acknowledge_remote(terminal_receiver.latest_number());
 
                 if matches!(applied, ReceiveResult::Applied { .. }) {
-                    if let Some(state) = terminal_receiver.latest_state() {
-                        let output = render_diff(
-                            previous_framebuffer.as_ref(),
-                            &state.framebuffer,
-                        );
-                        stdout.write_all(output.as_bytes())?;
-                        stdout.flush()?;
-                        previous_framebuffer = Some(state.framebuffer.clone());
+                    if let Some(diff) = &instruction.diff {
+                        if !diff.is_empty() {
+                            if let Ok(msg) = HostMessage::decode(diff) {
+                                for inst in &msg.instructions {
+                                    if let HostInstruction::HostBytes(bytes) = inst {
+                                        stdout.write_all(bytes)?;
+                                    }
+                                }
+                                stdout.flush()?;
+                            }
+                        }
                     }
                 }
                 let should_ack = matches!(
