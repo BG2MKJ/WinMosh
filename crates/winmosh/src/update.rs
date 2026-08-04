@@ -88,23 +88,43 @@ fn latest_release() -> Result<ReleaseInfo> {
 fn download_update(release: &ReleaseInfo) -> Result<PathBuf> {
     let destination_dir = std::env::temp_dir().join("winmosh-update");
     fs::create_dir_all(&destination_dir)?;
-    let final_path = destination_dir.join(&release.asset_name);
-    let partial_path = final_path.with_extension("download");
+    let dl_dir = destination_dir.join("dl");
+    fs::create_dir_all(&dl_dir)?;
+
+    let ext = release.asset_name.rsplit('.').next().unwrap_or("");
+    let is_zip = ext.eq_ignore_ascii_case("zip");
+    let dl_path = dl_dir.join(if is_zip { "update.zip" } else { "winmosh.exe" });
+
     let command = format!(
         "$ProgressPreference='SilentlyContinue'; \
          Invoke-WebRequest -Headers @{{'User-Agent'='WinMosh/{CURRENT_VERSION}'}} \
          -Uri '{}' -OutFile '{}'",
-        escape_powershell_single_quoted(&release.asset_url),
-        escape_powershell_single_quoted(&partial_path.to_string_lossy())
+        escape_ps_sq(&release.asset_url),
+        escape_ps_sq(&dl_path.to_string_lossy())
     );
     run_powershell(&["-NoProfile", "-Command", &command])?;
-    if fs::metadata(&partial_path)?.len() == 0 {
-        return Err(Error::Update(
-            "downloaded update artifact is empty".to_owned(),
-        ));
+    if fs::metadata(&dl_path)?.len() == 0 {
+        return Err(Error::Update("downloaded update artifact is empty".to_owned()));
     }
-    fs::rename(&partial_path, &final_path)?;
-    Ok(final_path)
+
+    if is_zip {
+        run_powershell(&[
+            "-NoProfile",
+            "-Command",
+            &format!(
+                "Expand-Archive -Force -Path '{}' -DestinationPath '{}'",
+                escape_ps_sq(&dl_path.to_string_lossy()),
+                escape_ps_sq(&destination_dir.to_string_lossy()),
+            ),
+        ])?;
+        let _ = fs::remove_dir_all(&dl_dir);
+        Ok(destination_dir.join("winmosh.exe"))
+    } else {
+        let exe_path = destination_dir.join("winmosh.exe");
+        fs::rename(&dl_path, &exe_path)?;
+        let _ = fs::remove_dir_all(&dl_dir);
+        Ok(exe_path)
+    }
 }
 
 fn run_powershell(args: &[&str]) -> Result<String> {
@@ -203,52 +223,31 @@ fn extract_string_field(json: &str, field: &str) -> Option<String> {
     None
 }
 
-fn escape_powershell_single_quoted(value: &str) -> String {
+fn escape_ps_sq(value: &str) -> String {
     value.replace('\'', "''")
 }
 
 fn self_replace(new_exe: &PathBuf) -> Result<()> {
-    let current_exe = std::env::current_exe()?;
-
-    if new_exe.extension().map_or(false, |ext| ext == "zip") {
-        let fallback = PathBuf::from(".");
-        let dir = new_exe.parent().unwrap_or(&fallback);
-        let unzipped = dir.join("winmosh.exe");
-        if !unzipped.exists() {
-            return Err(Error::Update(
-                "zip downloaded but winmosh.exe not found after extraction".to_owned(),
-            ));
-        }
-        let script = format!(
-            "$ErrorActionPreference='Stop'; \
-             Start-Sleep -Seconds 1; \
-             Copy-Item -Force '{}' '{}'; \
-             Remove-Item '{}' -Recurse -Force -ErrorAction SilentlyContinue; \
-             Write-Host 'WinMosh updated to latest version.' -ForegroundColor Green",
-            escape_ps(&unzipped.to_string_lossy()),
-            escape_ps(&current_exe.to_string_lossy()),
-            escape_ps(&dir.to_string_lossy()),
-        );
-        run_powershell(&["-NoProfile", "-Command", &script])?;
-    } else {
-        let script = format!(
-            "$ErrorActionPreference='Stop'; \
-             Start-Sleep -Seconds 1; \
-             Copy-Item -Force '{}' '{}'; \
-             Remove-Item '{}' -Force -ErrorAction SilentlyContinue; \
-             Write-Host 'WinMosh updated to latest version.' -ForegroundColor Green",
-            escape_ps(&new_exe.to_string_lossy()),
-            escape_ps(&current_exe.to_string_lossy()),
-            escape_ps(&new_exe.to_string_lossy()),
-        );
-        run_powershell(&["-NoProfile", "-Command", &script])?;
+    let current = std::env::current_exe()?;
+    if !new_exe.exists() {
+        return Err(Error::Update(format!(
+            "downloaded exe not found: {}",
+            new_exe.display()
+        )));
     }
+    let script = format!(
+        "$ErrorActionPreference='Stop'; \
+         Start-Sleep -Seconds 1; \
+         Copy-Item -Force '{}' '{}'; \
+         Remove-Item '{}' -Recurse -Force -ErrorAction SilentlyContinue; \
+         Write-Host 'WinMosh updated.' -ForegroundColor Green",
+        escape_ps_sq(&new_exe.to_string_lossy()),
+        escape_ps_sq(&current.to_string_lossy()),
+        escape_ps_sq(&new_exe.parent().unwrap_or(&current).to_string_lossy()),
+    );
+    run_powershell(&["-NoProfile", "-Command", &script])?;
     println!("update applied, restart winmosh to use the new version");
     Ok(())
-}
-
-fn escape_ps(s: &str) -> String {
-    s.replace('\'', "''")
 }
 
 impl Version {
