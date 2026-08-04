@@ -1,4 +1,10 @@
 $ErrorActionPreference = 'Stop'
+if ($env:MSYSTEM) {
+    Write-Host 'Git Bash detected. Add this to ~/.bashrc:' -ForegroundColor Yellow
+    Write-Host '  export MSYS_NO_PATHCONV=1' -ForegroundColor White
+    Write-Host 'Otherwise Unix paths like /home/user/bin will be converted to Windows paths.' -ForegroundColor Gray
+    Write-Host ''
+}
 $host.UI.RawUI.WindowTitle = 'WinMosh Installer'
 
 # ── ASCII Art ───────────────────────────────────────────
