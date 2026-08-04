@@ -131,9 +131,20 @@ fn run_interactive(global: &GlobalOptions, resolved: ResolvedTarget) -> Result<(
                 if let Some(ack_number) = instruction.ack_num {
                     user_sender.acknowledge_local(ack_number);
                 }
-                let applied = terminal_receiver
-                    .apply_instruction(&instruction)
-                    .map_err(|error| Error::Protocol(error.to_string()))?;
+                let applied = match terminal_receiver.apply_instruction(&instruction) {
+                    Ok(applied) => applied,
+                    Err(_) => {
+                        let rebase_ack = terminal_receiver.ack_instruction();
+                        send_state_instruction(
+                            &mut transport,
+                            &mut fragmenter,
+                            &clock,
+                            last_remote_timestamp,
+                            &rebase_ack,
+                        )?;
+                        continue;
+                    }
+                };
                 user_sender.acknowledge_remote(terminal_receiver.latest_number());
 
                 if matches!(applied, ReceiveResult::Applied { .. }) {
@@ -376,23 +387,23 @@ fn bootstrap_locale() -> String {
 
 fn print_resolved_target(resolved: &ResolvedTarget) {
     if let Some(alias) = &resolved.alias_name {
-        println!("alias: {alias}");
+        eprintln!("alias: {alias}");
     } else {
-        println!("alias: <none>");
+        eprintln!("alias: <none>");
     }
-    println!("ssh target: {}", resolved.ssh_target);
-    println!("effective host: {}", resolved.effective_ssh.hostname);
-    println!("effective user: {}", resolved.effective_ssh.user);
-    println!("effective ssh port: {}", resolved.effective_ssh.port);
-    println!("address family: {}", resolved.effective_ssh.address_family);
-    println!("mosh server: {}", resolved.mosh_server);
-    println!("udp port preference: {}", resolved.udp_port);
+    eprintln!("ssh target: {}", resolved.ssh_target);
+    eprintln!("effective host: {}", resolved.effective_ssh.hostname);
+    eprintln!("effective user: {}", resolved.effective_ssh.user);
+    eprintln!("effective ssh port: {}", resolved.effective_ssh.port);
+    eprintln!("address family: {}", resolved.effective_ssh.address_family);
+    eprintln!("mosh server: {}", resolved.mosh_server);
+    eprintln!("udp port preference: {}", resolved.udp_port);
     if let Some(candidate) = resolved.udp_candidates.first() {
-        println!("udp host candidate: {}", candidate.host);
+        eprintln!("udp host candidate: {}", candidate.host);
     }
-    println!("terminal: {}", resolved.terminal);
-    println!("prediction: {}", resolved.prediction);
-    println!("protocol status: {}", winmosh_protocol::protocol_status());
+    eprintln!("terminal: {}", resolved.terminal);
+    eprintln!("prediction: {}", resolved.prediction);
+    eprintln!("protocol status: {}", winmosh_protocol::protocol_status());
 }
 
 #[cfg(test)]
