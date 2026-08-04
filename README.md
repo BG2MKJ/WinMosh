@@ -2,7 +2,7 @@
 
 原生 Windows Mosh 客户端，使用 Rust 编写。直接兼容 Linux 上的官方 mosh-server，无需 WSL、Cygwin 或虚拟机。
 
-与 mosh-server 1.4.0 协议互通验证通过，85 个单元测试覆盖协议、终端、配置和安全模块。
+与 mosh-server 1.4.0 协议互通。
 
 ---
 
