@@ -12,11 +12,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install MinGW toolchain
-        run: choco install mingw -y --no-progress
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable-x86_64-pc-windows-gnu
           components: clippy, rustfmt
       - name: Build
         run: cargo build --workspace

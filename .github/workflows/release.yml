@@ -15,13 +15,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install MinGW toolchain
-        run: choco install mingw -y --no-progress
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable-x86_64-pc-windows-gnu
       - name: Build release binary
-        run: cargo build --locked --release -p winmosh
+        run: cargo build --release -p winmosh
       - name: Package release assets
         shell: pwsh
         run: |
