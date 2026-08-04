@@ -20,6 +20,25 @@ struct ReleaseInfo {
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Version(Vec<u64>);
 
+pub fn check_in_background() {
+    let current = match Version::parse(CURRENT_VERSION) {
+        Ok(v) => v,
+        Err(_) => return,
+    };
+    let release = match latest_release() {
+        Ok(r) => r,
+        Err(_) => return,
+    };
+    if release.version > current {
+        eprintln!();
+        eprintln!(
+            "  \x1b[33mWinMosh {} available (you have {}). Run \x1b[1mwinmosh update --download\x1b[0m\x1b[33m to update.\x1b[0m",
+            release.tag, CURRENT_VERSION
+        );
+        eprintln!();
+    }
+}
+
 pub fn run(mode: UpdateMode) -> Result<()> {
     let current = Version::parse(CURRENT_VERSION)?;
     let release = latest_release()?;

@@ -43,7 +43,10 @@ fn dispatch(invocation: Invocation) -> Result<()> {
         Command::Config(command) => run_config(invocation.global, command),
         Command::Doctor(options) => doctor::run(invocation.global, options),
         Command::Update(mode) => update::run(mode),
-        Command::Connect(target) => session::run(invocation.global, target),
+        Command::Connect(target) => {
+            update::check_in_background();
+            session::run(invocation.global, target)
+        }
     }
 }
 
