@@ -183,7 +183,11 @@ fn process_server_instruction(
         .map_err(|error| Error::Protocol(error.to_string()))?;
     user_sender.acknowledge_remote(terminal_receiver.latest_number());
 
-    if matches!(applied, ReceiveResult::Applied { .. } | ReceiveResult::Duplicate { .. }) {
+    let should_ack = matches!(
+        applied,
+        ReceiveResult::Applied { .. } | ReceiveResult::Duplicate { .. }
+    );
+    if matches!(applied, ReceiveResult::Applied { .. }) {
         if let Some(state) = terminal_receiver.latest_state() {
             stdout.write_all(
                 winmosh_terminal::render_framebuffer(&state.framebuffer).as_bytes(),
@@ -191,7 +195,7 @@ fn process_server_instruction(
             stdout.flush()?;
         }
     }
-    Ok(matches!(applied, ReceiveResult::Applied { .. } | ReceiveResult::Duplicate { .. }))
+    Ok(should_ack)
 }
 
 fn bootstrap_request(

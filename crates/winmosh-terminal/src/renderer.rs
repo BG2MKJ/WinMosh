@@ -2,7 +2,7 @@ use crate::framebuffer::Framebuffer;
 use crate::rendition::{Color, Intensity, Rendition};
 
 pub fn render_framebuffer(framebuffer: &Framebuffer) -> String {
-    let mut output = String::from("\x1b[H\x1b[2J");
+    let mut output = String::from("\x1b[H");
     for row in 0..framebuffer.size.rows {
         if row > 0 {
             output.push_str("\r\n");
