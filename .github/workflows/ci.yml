@@ -10,11 +10,17 @@ jobs:
   windows:
     name: Windows Rust checks
     runs-on: windows-latest
+    env:
+      CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: rust-lld
+      RUSTFLAGS: -C link-arg=--fatal-warnings
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
+      - name: Setup Rust GNU toolchain
+        run: |
+          rustup set default-host x86_64-pc-windows-gnu
+          rustup default stable
+      - name: Toolchain info
+        run: rustup show
       - name: Build
         run: cargo build --workspace
       - name: Test
