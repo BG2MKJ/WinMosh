@@ -4,6 +4,7 @@ mod cli;
 mod doctor;
 mod error;
 mod session;
+mod uninstall;
 mod update;
 
 use std::process::ExitCode;

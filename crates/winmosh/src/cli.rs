@@ -11,6 +11,7 @@ use winmosh_config::{
 use crate::doctor;
 use crate::error::{Error, Result};
 use crate::session;
+use crate::uninstall;
 use crate::update;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -37,6 +38,7 @@ fn dispatch(invocation: Invocation) -> Result<()> {
             println!("winmosh {VERSION}");
             Ok(())
         }
+        Command::Uninstall => uninstall::run(),
         Command::Alias(command) => run_alias(invocation.global, command),
         Command::Config(command) => run_config(invocation.global, command),
         Command::Doctor(options) => doctor::run(invocation.global, options),
@@ -184,7 +186,8 @@ USAGE:\n\
     winmosh config <COMMAND>\n\
     winmosh doctor [TARGET]\n\
     winmosh update [--check|--download]\n\
-    winmosh version\n\n\
+    winmosh version\n\
+    winmosh --uninstall\n\n\
 OPTIONS:\n\
     --config <PATH>              Override %APPDATA%\\WinMosh\\config.toml\n\
     --ssh <PATH>                 Override ssh.exe path\n\
@@ -239,6 +242,7 @@ struct Invocation {
 enum Command {
     Help,
     Version,
+    Uninstall,
     Connect(String),
     Alias(AliasCommand),
     Config(ConfigCommand),
@@ -306,6 +310,7 @@ impl Invocation {
             Some("config") => Command::Config(parse_config_command(&mut parser)?),
             Some("doctor") => Command::Doctor(parse_doctor_command(&mut parser)?),
             Some("update") => Command::Update(parse_update_command(&mut parser)?),
+            Some("--uninstall") | Some("-uninstall") => Command::Uninstall,
             Some(target) if target.starts_with('-') => {
                 return Err(Error::Cli(format!("unknown option: {target}")))
             }

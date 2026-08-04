@@ -1,63 +1,104 @@
 $ErrorActionPreference = 'Stop'
+$host.UI.RawUI.WindowTitle = 'WinMosh Installer'
 
-$repo = 'BG2MKJ/WinMosh'
-$installDir = "$env:LOCALAPPDATA\WinMosh"
-$binDir = $installDir
+# ── ASCII Art ───────────────────────────────────────────
+$art = @'
 
-Write-Host 'WinMosh Installer' -ForegroundColor Cyan
-Write-Host "Install directory: $installDir" -ForegroundColor Gray
+  [36m╔╗ ╦ ╔╗ ╔╗  ╔╗ ╔╗ ╔══╗ ╔═╗
+  ║║ ║ ║║ ║║  ║║ ║║ ║╔╗║ ║╔╝
+  ║║ ║ ║║ ║║  ║║║║║ ║║║║ ║╚╗
+  ╚╝ ╚ ╚╝ ╚╝  ╚╝╚╝╚ ╚╝╚╝ ╚═╝  v__VERSION__
+  [0m
+  Native Windows Mosh Client  |  github.com/BG2MKJ/WinMosh
+'@ -replace '__VERSION__', '0.1.0'
 
-# Create install directory
-New-Item -ItemType Directory -Force -Path $installDir | Out-Null
+Clear-Host
+Write-Host $art
 
-# Download latest release
-$releaseUrl = "https://api.github.com/repos/$repo/releases/latest"
-Write-Host 'Fetching latest release...' -ForegroundColor Gray
-$release = Invoke-RestMethod -Uri $releaseUrl -Headers @{ 'Accept' = 'application/vnd.github+json' }
+$repo    = 'BG2MKJ/WinMosh'
+$dir     = "$env:LOCALAPPDATA\WinMosh"
+$exe     = Join-Path $dir 'winmosh.exe'
+$wm      = Join-Path $dir 'wm.exe'
 
-$asset = $release.assets | Where-Object { $_.name -eq 'winmosh.exe' }
-if (-not $asset) {
-    Write-Host 'ERROR: winmosh.exe not found in latest release. Trying zip fallback...' -ForegroundColor Yellow
-    $zipAsset = $release.assets | Where-Object { $_.name -like 'winmosh-windows-x86_64.zip' }
-    if (-not $zipAsset) {
-        Write-Host 'ERROR: No release asset found.' -ForegroundColor Red
-        exit 1
-    }
-    Write-Host "Downloading $($zipAsset.name)..." -ForegroundColor Gray
-    $zipPath = Join-Path $env:TEMP 'winmosh-release.zip'
-    Invoke-WebRequest -Uri $zipAsset.browser_download_url -OutFile $zipPath
-    Write-Host 'Extracting...' -ForegroundColor Gray
-    Expand-Archive -Path $zipPath -DestinationPath $installDir -Force
-    Remove-Item $zipPath
-} else {
-    Write-Host "Downloading $($asset.name) ($('{0:N0}' -f $asset.size) bytes)..." -ForegroundColor Gray
-    $exePath = Join-Path $installDir 'winmosh.exe'
-    Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $exePath
+# ── Spinner function ────────────────────────────────────
+$spinFrames = @('|', '/', '-', '\')
+$spinIdx    = 0
+function Spin-Step {
+    $script:spinIdx = ($script:spinIdx + 1) % 4
+    Write-Host "`r  $($spinFrames[$script:spinIdx])  $($args[0])" -NoNewline -ForegroundColor Cyan
+}
+function Spin-Done {
+    Write-Host "`r  +  $($args[0])" -ForegroundColor Green
+}
+function Spin-Fail {
+    Write-Host "`r  x  $($args[0])" -ForegroundColor Red
 }
 
-# Verify installation
-$finalExe = Join-Path $installDir 'winmosh.exe'
-if (-not (Test-Path $finalExe)) {
-    Write-Host 'ERROR: Installation failed - winmosh.exe not found.' -ForegroundColor Red
+# ── Install ─────────────────────────────────────────────
+Spin-Step 'Creating install directory...'
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+Spin-Done "Install directory: $dir"
+
+Spin-Step 'Fetching latest release info...'
+$releaseJson = Invoke-RestMethod `
+    -Uri "https://api.github.com/repos/$repo/releases/latest" `
+    -Headers @{ 'Accept' = 'application/vnd.github+json' }
+
+$asset = $releaseJson.assets | Where-Object { $_.name -eq 'winmosh.exe' }
+$isZip = $false
+if (-not $asset) {
+    $asset = $releaseJson.assets | Where-Object { $_.name -like 'winmosh-windows-x86_64.zip' }
+    $isZip = $true
+}
+if (-not $asset) {
+    Spin-Fail 'No release asset found.'
     exit 1
 }
+Spin-Done "Found: $($asset.name) ($('{0:N0}' -f $asset.size) bytes)"
 
-$version = & $finalExe version 2>&1
-Write-Host "Installed: $version" -ForegroundColor Green
+Spin-Step 'Downloading...'
+$tmp = Join-Path $env:TEMP 'winmosh-dl'
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+$dlPath = Join-Path $tmp $asset.name
+Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $dlPath
+Spin-Done 'Download complete'
 
-# Add to PATH
-$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-if ($userPath -notlike "*$installDir*") {
-    Write-Host 'Adding to user PATH...' -ForegroundColor Gray
-    [Environment]::SetEnvironmentVariable('Path', "$userPath;$installDir", 'User')
-    Write-Host 'PATH updated. Restart your terminal or run: refreshenv' -ForegroundColor Yellow
-    # Also update current session
-    $env:Path = "$env:Path;$installDir"
+if ($isZip) {
+    Spin-Step 'Extracting...'
+    Expand-Archive -Path $dlPath -DestinationPath $dir -Force
+    Remove-Item $dlPath
 } else {
-    Write-Host 'Already in PATH.' -ForegroundColor Gray
+    Move-Item -Force $dlPath $exe
+}
+Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+
+$ver = & $exe version 2>&1
+Spin-Done "Installed: $ver"
+
+Spin-Step 'Creating wm alias...'
+Copy-Item -Force $exe $wm
+Spin-Done 'wm.exe ready'
+
+Spin-Step 'Updating PATH...'
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+if ($userPath -notlike "*$dir*") {
+    [Environment]::SetEnvironmentVariable('Path', "$userPath;$dir", 'User')
+    $env:Path = "$env:Path;$dir"
+    Spin-Done 'PATH updated'
+} else {
+    Spin-Done 'Already in PATH'
 }
 
+# ── Done ────────────────────────────────────────────────
 Write-Host ''
-Write-Host 'WinMosh installed successfully!' -ForegroundColor Green
-Write-Host "Run 'winmosh user@host' to connect." -ForegroundColor White
-Write-Host "Run 'winmosh alias add myserver user@host' to save a connection." -ForegroundColor White
+Write-Host '  WinMosh installed!' -ForegroundColor Green
+Write-Host ''
+Write-Host '  Usage:' -ForegroundColor White
+Write-Host '    winmosh user@host         Connect to a server'
+Write-Host '    wm     user@host         Same, shorter alias'
+Write-Host '    winmosh alias add ...    Save a connection'
+Write-Host '    winmosh update --download  Update to latest'
+Write-Host '    winmosh --uninstall       Remove everything'
+Write-Host ''
+Write-Host '  Restart your terminal or run: refreshenv' -ForegroundColor Yellow
+Write-Host ''

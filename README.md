@@ -21,8 +21,9 @@ irm https://raw.githubusercontent.com/BG2MKJ/WinMosh/main/install.ps1 | iex
 ## 使用
 
 ```powershell
-# 直接连接
+# 直接连接（wm 是 winmosh 的短别名）
 winmosh user@host
+wm user@host
 
 # 保存别名
 winmosh alias add myserver user@192.168.1.100
@@ -33,9 +34,14 @@ winmosh myserver
 # 覆盖选项
 winmosh myserver --udp-port 60020 --terminal xterm-256color
 
+# 更新到最新版本
+winmosh update --download
+
+# 卸载
+winmosh --uninstall
+
 # 诊断环境
 winmosh doctor
-winmosh doctor myserver
 ```
 
 ## 配置

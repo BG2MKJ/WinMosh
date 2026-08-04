@@ -38,8 +38,7 @@ pub fn run(mode: UpdateMode) -> Result<()> {
         }
         UpdateMode::Download => {
             let path = download_update(&release)?;
-            println!("downloaded: {}", path.display());
-            println!("replace winmosh.exe manually after verifying the archive contents");
+            self_replace(&path)?;
         }
     }
     Ok(())
@@ -68,9 +67,7 @@ fn latest_release() -> Result<ReleaseInfo> {
 }
 
 fn download_update(release: &ReleaseInfo) -> Result<PathBuf> {
-    let destination_dir = std::env::current_dir()?
-        .join("target")
-        .join("winmosh-update");
+    let destination_dir = std::env::temp_dir().join("winmosh-update");
     fs::create_dir_all(&destination_dir)?;
     let final_path = destination_dir.join(&release.asset_name);
     let partial_path = final_path.with_extension("download");
@@ -189,6 +186,50 @@ fn extract_string_field(json: &str, field: &str) -> Option<String> {
 
 fn escape_powershell_single_quoted(value: &str) -> String {
     value.replace('\'', "''")
+}
+
+fn self_replace(new_exe: &PathBuf) -> Result<()> {
+    let current_exe = std::env::current_exe()?;
+
+    if new_exe.extension().map_or(false, |ext| ext == "zip") {
+        let fallback = PathBuf::from(".");
+        let dir = new_exe.parent().unwrap_or(&fallback);
+        let unzipped = dir.join("winmosh.exe");
+        if !unzipped.exists() {
+            return Err(Error::Update(
+                "zip downloaded but winmosh.exe not found after extraction".to_owned(),
+            ));
+        }
+        let script = format!(
+            "$ErrorActionPreference='Stop'; \
+             Start-Sleep -Seconds 1; \
+             Copy-Item -Force '{}' '{}'; \
+             Remove-Item '{}' -Recurse -Force -ErrorAction SilentlyContinue; \
+             Write-Host 'WinMosh updated to latest version.' -ForegroundColor Green",
+            escape_ps(&unzipped.to_string_lossy()),
+            escape_ps(&current_exe.to_string_lossy()),
+            escape_ps(&dir.to_string_lossy()),
+        );
+        run_powershell(&["-NoProfile", "-Command", &script])?;
+    } else {
+        let script = format!(
+            "$ErrorActionPreference='Stop'; \
+             Start-Sleep -Seconds 1; \
+             Copy-Item -Force '{}' '{}'; \
+             Remove-Item '{}' -Force -ErrorAction SilentlyContinue; \
+             Write-Host 'WinMosh updated to latest version.' -ForegroundColor Green",
+            escape_ps(&new_exe.to_string_lossy()),
+            escape_ps(&current_exe.to_string_lossy()),
+            escape_ps(&new_exe.to_string_lossy()),
+        );
+        run_powershell(&["-NoProfile", "-Command", &script])?;
+    }
+    println!("update applied, restart winmosh to use the new version");
+    Ok(())
+}
+
+fn escape_ps(s: &str) -> String {
+    s.replace('\'', "''")
 }
 
 impl Version {
