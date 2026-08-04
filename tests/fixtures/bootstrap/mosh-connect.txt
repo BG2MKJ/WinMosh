@@ -1,0 +1,2 @@
+mosh-server (mosh) version 1.4.0
+MOSH CONNECT 60024 AAECAwQFBgcICQoLDA0ODw

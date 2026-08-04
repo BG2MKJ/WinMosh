@@ -1,0 +1,11 @@
+[licenses]
+allow = ["GPL-3.0-or-later"]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+
+[advisories]
+version = 2
+yanked = "deny"

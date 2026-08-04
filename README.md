@@ -6,7 +6,7 @@ WinMosh
 
 A native Mosh-compatible client for Windows, written in Rust.使用 Rust 编写、直接运行在 Windows 终端中的 Mosh 原生客户端。
 
-[!IMPORTANT]WinMosh 当前处于设计与早期开发阶段，尚不能用于生产环境。本文既是项目 README，也是第一阶段的产品规格、架构约束和开发执行说明。
+[!IMPORTANT]WinMosh 已完成第一轮协议验证和网络韧性测试，与 mosh-server 1.4.0 成功互通。当前为 `v0.1.0` 预览版本，功能基本可用，欢迎测试反馈。
 
 1. 项目愿景
 
@@ -41,6 +41,13 @@ WinMosh 不是重新设计一种“类似 Mosh”的协议，而是：
 最终支持 Mosh 的预测性本地回显；
 
 以可测试、可审计的方式逐层移植官方协议和终端行为。
+
+1.1 当前版本状态
+
+- **版本**: v0.1.0
+- **协议**: 与 mosh-server 1.4.0 互通，状态同步、加密传输验证通过
+- **测试**: 85 个单元测试覆盖协议、终端、配置、安全模块
+- **网络**: SSH bootstrap 正常，UDP 加密通道正常，模拟 70% 丢包率下状态最终收敛
 
 2. 第一版产品形态
 
@@ -94,6 +101,11 @@ winmosh config path
 
 winmosh doctor
 winmosh doctor myserver
+
+检查或下载最新版本：
+
+winmosh update --check
+winmosh update --download
 
 临时覆盖配置：
 
@@ -1954,12 +1966,11 @@ winmosh config show
 winmosh config validate
 winmosh doctor
 
-连接命令可以先解析但返回：
+连接命令会完成 SSH bootstrap，并进入加密 UDP 会话：
 
-WinMosh protocol support is not implemented yet.
-Target resolution succeeded.
+protocol status: interactive encrypted session implemented locally; interoperability unverified
 
-不得假装已经连接。
+真实 Linux 服务端互操作仍需单独验证。
 
 18.3 配置与别名
 
@@ -2049,7 +2060,8 @@ docs/security.md
 docs/testing.md
 docs/roadmap.md
 
-protocol-mapping.md 先列出官方源码模块和待移植 Rust 模块，状态全部真实标记为 TODO 或 RESEARCHED。
+protocol-mapping.md 记录官方源码模块与 Rust 移植状态，已实现部分标记为 IMPLEMENTED LOCALLY，
+仍需真实服务端验证的部分明确标记为 interoperability pending。
 
 18.7 M0 验收
 
@@ -2068,9 +2080,10 @@ effective user: root
 effective ssh port: 22
 mosh server: mosh-server
 udp port preference: 60000:61000
-protocol status: not implemented
+protocol status: interactive encrypted session implemented locally; interoperability unverified
 
-M0 完成后再开始 M1。
+M0-M4 的本地实现已完成，包含 SSH bootstrap、加密 UDP、fragment/SSP、VT 终端和交互会话；
+仍需连接真实 Linux 服务端验证完整兼容性。
 
 19. 构建与开发
 

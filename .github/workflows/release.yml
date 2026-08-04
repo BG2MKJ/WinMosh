@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build release artifact
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build release binary
+        run: cargo build --locked --release -p winmosh
+      - name: Package release assets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = if ($env:GITHUB_REF_NAME -match '^v') { $env:GITHUB_REF_NAME } else { 'manual' }
+          $staging = Join-Path $env:RUNNER_TEMP "winmosh-$version"
+          New-Item -ItemType Directory -Force -Path $staging | Out-Null
+          Copy-Item target/release/winmosh.exe (Join-Path $staging 'winmosh.exe')
+          $archive = 'winmosh-windows-x86_64.zip'
+          Compress-Archive -Path (Join-Path $staging 'winmosh.exe') -DestinationPath $archive -Force
+          (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower() | Set-Content "$archive.sha256"
+          Copy-Item target/release/winmosh.exe 'winmosh.exe'
+          (Get-FileHash 'winmosh.exe' -Algorithm SHA256).Hash.ToLower() | Set-Content 'winmosh.exe.sha256'
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: winmosh-windows-x86_64
+          path: |
+            winmosh-windows-x86_64.zip
+            winmosh-windows-x86_64.zip.sha256
+            winmosh.exe
+            winmosh.exe.sha256
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            winmosh-windows-x86_64.zip
+            winmosh-windows-x86_64.zip.sha256
+            winmosh.exe
+            winmosh.exe.sha256

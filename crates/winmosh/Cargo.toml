@@ -1,0 +1,19 @@
+﻿[package]
+name = "winmosh"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+crossterm = "0.28"
+winmosh-bootstrap = { path = "../winmosh-bootstrap" }
+winmosh-config = { path = "../winmosh-config" }
+winmosh-platform = { path = "../winmosh-platform" }
+winmosh-protocol = { path = "../winmosh-protocol" }
+winmosh-terminal = { path = "../winmosh-terminal" }

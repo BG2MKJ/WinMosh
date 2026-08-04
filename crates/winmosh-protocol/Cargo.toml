@@ -1,0 +1,18 @@
+﻿[package]
+name = "winmosh-protocol"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+aes = "0.8"
+base64 = "0.22"
+flate2 = "1.1"
+ocb3 = { version = "0.1", default-features = false, features = ["std"] }
+zeroize = "1"
