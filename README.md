@@ -8,6 +8,34 @@ A native Mosh-compatible client for Windows, written in Rust.使用 Rust 编写�
 
 [!IMPORTANT]WinMosh 已完成第一轮协议验证和网络韧性测试，与 mosh-server 1.4.0 成功互通。当前为 `v0.1.0` 预览版本，功能基本可用，欢迎测试反馈。
 
+## 安装
+
+在 **PowerShell** 中运行以下命令（需要系统已安装 SSH 客户端）：
+
+```powershell
+irm https://raw.githubusercontent.com/BG2MKJ/WinMosh/main/install.ps1 | iex
+```
+
+这会自动从 GitHub Release 下载最新 `winmosh.exe`，安装到 `%LOCALAPPDATA%\WinMosh\` 并加入用户 PATH。安装完成后重新打开终端即可使用 `winmosh` 命令。
+
+如需手动安装：从 [Releases](https://github.com/BG2MKJ/WinMosh/releases) 页面下载 `winmosh.exe`，放到任意在 PATH 中的目录。
+
+## 使用
+
+```powershell
+# 直接连接
+winmosh user@host
+
+# 保存别名
+winmosh alias add myserver user@192.168.1.100
+
+# 使用别名连接
+winmosh myserver
+
+# 诊断
+winmosh doctor
+```
+
 1. 项目愿景
 
 Mosh 能在网络中断、设备休眠、IP 地址变化、高延迟和丢包环境下保持远程终端会话，但官方目前没有提供原生 Windows 可执行客户端。Windows 用户通常需要依赖 WSL、Cygwin 或其他兼容环境，安装和终端集成都不够自然。
