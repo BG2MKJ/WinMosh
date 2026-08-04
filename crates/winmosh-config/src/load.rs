@@ -286,7 +286,7 @@ fn apply_default(
     line: usize,
 ) -> Result<(), ConfigError> {
     match key {
-        "mosh_server" => defaults.mosh_server = Some(value.to_owned()),
+        "mosh_server" => defaults.mosh_server = Some(crate::alias::sanitize_server_path(value)),
         "udp_port" => defaults.udp_port = Some(PortSpec::parse(value)?),
         "terminal" => defaults.terminal = Some(value.to_owned()),
         "prediction" => defaults.prediction = Some(PredictionMode::parse(value)?),
@@ -315,7 +315,7 @@ fn apply_host(
         }
         "udp_host" => host.udp_host = Some(value.to_owned()),
         "udp_port" => host.udp_port = Some(PortSpec::parse(value)?),
-        "mosh_server" => host.mosh_server = Some(value.to_owned()),
+        "mosh_server" => host.mosh_server = Some(crate::alias::sanitize_server_path(value)),
         "terminal" => host.terminal = Some(value.to_owned()),
         "prediction" => host.prediction = Some(PredictionMode::parse(value)?),
         _ => return parse_error(path, line, format!("unknown host key: {key}")),

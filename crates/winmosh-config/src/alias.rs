@@ -23,6 +23,20 @@ pub fn is_valid_ssh_target(target: &str) -> bool {
     !trimmed.is_empty() && !trimmed.starts_with('-')
 }
 
+pub fn sanitize_server_path(path: &str) -> String {
+    let trimmed = path.trim();
+    if trimmed.len() >= 2 && trimmed.as_bytes()[1] == b':' {
+        let colon = trimmed.find(':').unwrap_or(0);
+        let relative = &trimmed[colon + 1..];
+        if relative.starts_with('/') {
+            return relative.to_owned();
+        }
+        let without_drive = relative.strip_prefix('/').unwrap_or(relative);
+        return format!("/{}", without_drive.replace('\\', "/"));
+    }
+    trimmed.to_owned()
+}
+
 pub fn add_alias(config: &mut AppConfig, request: AliasAdd) -> Result<(), ConfigError> {
     validate_alias_name(&request.name)?;
     if config.hosts.contains_key(&request.name) {
@@ -49,7 +63,7 @@ pub fn add_alias(config: &mut AppConfig, request: AliasAdd) -> Result<(), Config
             ssh_target: request.ssh_target,
             udp_host: request.udp_host,
             udp_port: request.udp_port,
-            mosh_server: request.mosh_server,
+            mosh_server: request.mosh_server.map(|s| sanitize_server_path(&s)),
             terminal: request.terminal,
             prediction: request.prediction,
         },
