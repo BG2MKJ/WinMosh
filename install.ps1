@@ -16,7 +16,7 @@ $art = @'
   ╚╝ ╚ ╚╝ ╚╝  ╚╝╚╝╚ ╚╝╚╝ ╚═╝  v__VERSION__
   [0m
   Native Windows Mosh Client  |  github.com/BG2MKJ/WinMosh
-'@ -replace '__VERSION__', '0.1.6'
+'@ -replace '__VERSION__', '0.1.7'
 
 Clear-Host
 Write-Host $art

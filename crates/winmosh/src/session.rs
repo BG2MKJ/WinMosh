@@ -332,6 +332,18 @@ fn key_event_bytes(key: KeyEvent) -> Option<Vec<u8>> {
         KeyCode::Insert => b"\x1b[2~".to_vec(),
         KeyCode::PageUp => b"\x1b[5~".to_vec(),
         KeyCode::PageDown => b"\x1b[6~".to_vec(),
+        KeyCode::F(1) => b"\x1bOP".to_vec(),
+        KeyCode::F(2) => b"\x1bOQ".to_vec(),
+        KeyCode::F(3) => b"\x1bOR".to_vec(),
+        KeyCode::F(4) => b"\x1bOS".to_vec(),
+        KeyCode::F(5) => b"\x1b[15~".to_vec(),
+        KeyCode::F(6) => b"\x1b[17~".to_vec(),
+        KeyCode::F(7) => b"\x1b[18~".to_vec(),
+        KeyCode::F(8) => b"\x1b[19~".to_vec(),
+        KeyCode::F(9) => b"\x1b[20~".to_vec(),
+        KeyCode::F(10) => b"\x1b[21~".to_vec(),
+        KeyCode::F(11) => b"\x1b[23~".to_vec(),
+        KeyCode::F(12) => b"\x1b[24~".to_vec(),
         KeyCode::Char(character) => {
             if key.modifiers.contains(KeyModifiers::CONTROL) {
                 vec![control_byte(character)?]
