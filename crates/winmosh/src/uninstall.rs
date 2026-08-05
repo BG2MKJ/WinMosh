@@ -73,7 +73,12 @@ pub fn run() -> Result<()> {
     if !pending.is_empty() {
         let files_to_remove = pending
             .iter()
-            .map(|p| format!("Remove-Item -Force -LiteralPath '{}' -ErrorAction SilentlyContinue", p))
+            .map(|p| {
+                format!(
+                    "Remove-Item -Force -LiteralPath '{}' -ErrorAction SilentlyContinue",
+                    p
+                )
+            })
             .collect::<Vec<_>>()
             .join("; ");
         let dirs = format!(

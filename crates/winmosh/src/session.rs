@@ -88,8 +88,8 @@ fn run_interactive(global: &GlobalOptions, resolved: ResolvedTarget) -> Result<(
     let mut last_received_at = clock.timestamp();
     let mut connection_lost = false;
     let mut stdout = io::stdout();
-    let _console = ConsoleGuard::enter()
-        .map_err(|e| Error::Protocol(format!("console setup failed: {e}")))?;
+    let _console =
+        ConsoleGuard::enter().map_err(|e| Error::Protocol(format!("console setup failed: {e}")))?;
     let _raw_mode = RawModeGuard::enter()?;
     stdout.write_all(b"\x1b[2J\x1b[H")?;
     stdout.flush()?;
@@ -187,10 +187,7 @@ fn run_interactive(global: &GlobalOptions, resolved: ResolvedTarget) -> Result<(
                         &ack,
                     )?;
                 }
-                if matches!(
-                    terminal_receiver.latest_state(),
-                    None
-                ) {
+                if matches!(terminal_receiver.latest_state(), None) {
                     running = false;
                 }
             }
@@ -215,7 +212,6 @@ fn run_interactive(global: &GlobalOptions, resolved: ResolvedTarget) -> Result<(
     }
     Ok(())
 }
-
 
 fn bootstrap_request(
     global: &GlobalOptions,

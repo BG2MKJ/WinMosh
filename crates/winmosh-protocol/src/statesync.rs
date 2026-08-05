@@ -375,10 +375,7 @@ mod tests {
         receiver.apply_instruction(&first)?;
         let result = receiver.apply_instruction(&third)?;
         assert!(matches!(result, ReceiveResult::Applied { number: 3, .. }));
-        assert_eq!(
-            receiver.latest_state(),
-            Some(&ByteState(b"three".to_vec()))
-        );
+        assert_eq!(receiver.latest_state(), Some(&ByteState(b"three".to_vec())));
         Ok(())
     }
 
@@ -571,7 +568,10 @@ mod tests {
         }
 
         fn next(&mut self) -> u64 {
-            self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            self.state = self
+                .state
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             (self.state >> 33) as u64
         }
 

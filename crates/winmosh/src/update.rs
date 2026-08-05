@@ -104,7 +104,9 @@ fn download_update(release: &ReleaseInfo) -> Result<PathBuf> {
     );
     run_powershell(&["-NoProfile", "-Command", &command])?;
     if fs::metadata(&dl_path)?.len() == 0 {
-        return Err(Error::Update("downloaded update artifact is empty".to_owned()));
+        return Err(Error::Update(
+            "downloaded update artifact is empty".to_owned(),
+        ));
     }
 
     if is_zip {

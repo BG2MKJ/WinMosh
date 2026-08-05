@@ -343,7 +343,11 @@ mod tests {
         let mut fragmenter = Fragmenter::default();
         let mtu = 1400;
         let fragments = fragmenter.make_fragments(&instruction, mtu)?;
-        assert!(fragments.len() > 3, "expected multiple fragments, got {}", fragments.len());
+        assert!(
+            fragments.len() > 3,
+            "expected multiple fragments, got {}",
+            fragments.len()
+        );
         let mut assembler = FragmentAssembler::default();
         let mut result = None;
         for fragment in &fragments {
@@ -376,8 +380,18 @@ mod tests {
 
     #[test]
     fn assembler_resets_on_new_instruction_id() -> Result<(), Box<dyn std::error::Error>> {
-        let f1 = Fragment { id: 1, fragment_number: 0, final_fragment: true, contents: vec![1] };
-        let f2 = Fragment { id: 2, fragment_number: 0, final_fragment: true, contents: vec![2] };
+        let f1 = Fragment {
+            id: 1,
+            fragment_number: 0,
+            final_fragment: true,
+            contents: vec![1],
+        };
+        let f2 = Fragment {
+            id: 2,
+            fragment_number: 0,
+            final_fragment: true,
+            contents: vec![2],
+        };
         let mut assembler = FragmentAssembler::default();
         let r1 = assembler.add_fragment(f1)?;
         assert!(r1.is_some());
@@ -421,7 +435,11 @@ mod tests {
         let mut fragmenter = Fragmenter::default();
         let mtu = 60;
         let fragments = fragmenter.make_fragments(&instruction, mtu)?;
-        assert!(fragments.len() >= 2, "need at least 2 fragments, got {}", fragments.len());
+        assert!(
+            fragments.len() >= 2,
+            "need at least 2 fragments, got {}",
+            fragments.len()
+        );
 
         let mut assembler = FragmentAssembler::default();
         for &i in &[0_usize, 0_usize] {

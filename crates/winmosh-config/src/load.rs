@@ -305,11 +305,7 @@ fn apply_host(
     match key {
         "ssh_target" => {
             if !crate::alias::is_valid_ssh_target(value) {
-                return parse_error(
-                    path,
-                    line,
-                    "ssh_target must not be empty or start with '-'",
-                );
+                return parse_error(path, line, "ssh_target must not be empty or start with '-'");
             }
             host.ssh_target = value.to_owned()
         }

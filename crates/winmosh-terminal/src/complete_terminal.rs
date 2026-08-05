@@ -256,9 +256,7 @@ impl CompleteTerminal {
                     }
                     index += 2;
                 }
-                38 | 48
-                    if index + 4 < parameters.len() && parameters[index + 1] == 2 =>
-                {
+                38 | 48 if index + 4 < parameters.len() && parameters[index + 1] == 2 => {
                     let r = (parameters[index + 2] & 0xff) as u8;
                     let g = (parameters[index + 3] & 0xff) as u8;
                     let b = (parameters[index + 4] & 0xff) as u8;

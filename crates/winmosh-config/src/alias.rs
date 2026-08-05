@@ -125,7 +125,9 @@ fn validate_alias_name(name: &str) -> Result<(), ConfigError> {
 mod tests {
     use crate::model::AppConfig;
 
-    use super::{add_alias, is_valid_alias_name, is_valid_ssh_target, remove_alias, rename_alias, AliasAdd};
+    use super::{
+        add_alias, is_valid_alias_name, is_valid_ssh_target, remove_alias, rename_alias, AliasAdd,
+    };
 
     #[test]
     fn validates_alias_names() {

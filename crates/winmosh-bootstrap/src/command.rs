@@ -45,14 +45,12 @@ pub fn build_remote_command(request: &BootstrapRequest) -> String {
 }
 
 fn terminal_color_count(terminal: &str) -> u16 {
-    let terminal = terminal.to_ascii_lowercase();
-    if terminal.contains("truecolor") || terminal.contains("24bit") {
+    let t = terminal.to_ascii_lowercase();
+    if t.contains("truecolor") || t.contains("24bit") || t.contains("-256") {
         256
-    } else if terminal.ends_with("-256color") || terminal.contains("-256") {
-        256
-    } else if terminal.ends_with("-88color") {
+    } else if t.ends_with("-88color") {
         88
-    } else if terminal.ends_with("-16color") {
+    } else if t.ends_with("-16color") {
         16
     } else {
         8
