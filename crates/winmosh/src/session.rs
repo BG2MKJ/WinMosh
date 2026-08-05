@@ -6,6 +6,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifier
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use winmosh_bootstrap::{start_bootstrap, BootstrapRequest};
 use winmosh_config::{load_config, resolve_target, ResolvedTarget, DEFAULT_CONNECT_TIMEOUT};
+use winmosh_platform::windows::console::ConsoleGuard;
 use winmosh_platform::windows::resize::{current_terminal_size, TerminalSize};
 use winmosh_protocol::crypto::{CryptoSession, SessionKey as ProtocolSessionKey};
 use winmosh_protocol::datagram::ReceiveDisposition;
@@ -85,6 +86,8 @@ fn run_interactive(global: &GlobalOptions, resolved: ResolvedTarget) -> Result<(
     user_sender.set_state(user_stream.clone());
     let mut last_remote_timestamp = 0_u16;
     let mut stdout = io::stdout();
+    let _console = ConsoleGuard::enter()
+        .map_err(|e| Error::Protocol(format!("console setup failed: {e}")))?;
     let _raw_mode = RawModeGuard::enter()?;
     stdout.write_all(b"\x1b[2J\x1b[H")?;
     stdout.flush()?;
