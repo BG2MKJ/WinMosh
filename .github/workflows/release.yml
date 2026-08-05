@@ -15,14 +15,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Rust GNU toolchain
-        run: |
-          rustup set default-host x86_64-pc-windows-gnu
-          rustup default stable
-          rustup component add rust-src --target x86_64-pc-windows-gnu 2>/dev/null || true
+      - uses: dtolnay/rust-toolchain@stable
       - name: Build release binary
-        env:
-          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: rust-lld
         run: cargo build --release -p winmosh
       - name: Package release assets
         shell: pwsh
