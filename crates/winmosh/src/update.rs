@@ -229,7 +229,7 @@ fn escape_ps_sq(value: &str) -> String {
     value.replace('\'', "''")
 }
 
-fn self_replace(new_exe: &PathBuf) -> Result<()> {
+fn self_replace(new_exe: &std::path::Path) -> Result<()> {
     let current = std::env::current_exe()?;
     if !new_exe.exists() {
         return Err(Error::Update(format!(

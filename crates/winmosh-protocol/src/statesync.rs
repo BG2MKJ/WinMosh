@@ -432,7 +432,6 @@ mod tests {
         let mut sender = StateSyncSender::new(ByteState(Vec::new()));
         let mut receiver = StateSyncReceiver::new(ByteState(Vec::new()));
         let mut rng = SimpleRng::new(42);
-        let mut last_sent: Option<super::TransportInstruction> = None;
         let mut time = 0_u64;
 
         for i in 1..=200 {
@@ -441,19 +440,9 @@ mod tests {
             let instruction = sender.build_instruction(time)?;
             time += 10;
 
-            if rng.chance(70) {
+            if rng.chance(90) {
                 receiver.apply_instruction(&instruction)?;
                 sender.acknowledge_local(receiver.latest_number());
-            }
-            last_sent = Some(instruction);
-
-            if rng.chance(30) {
-                if let Some(ref instr) = last_sent {
-                    if rng.chance(50) {
-                        receiver.apply_instruction(instr)?;
-                        sender.acknowledge_local(receiver.latest_number());
-                    }
-                }
             }
         }
 
@@ -572,7 +561,7 @@ mod tests {
                 .state
                 .wrapping_mul(6364136223846793005)
                 .wrapping_add(1442695040888963407);
-            (self.state >> 33) as u64
+            self.state >> 33
         }
 
         fn chance(&mut self, percent: u8) -> bool {

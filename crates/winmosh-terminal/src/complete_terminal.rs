@@ -263,7 +263,7 @@ impl CompleteTerminal {
                     let color = Color::Indexed(if r == g && g == b {
                         232 + (u16::from(r) * 24 / 256) as u8
                     } else {
-                        16 + 36 * (r / 51) as u8 + 6 * (g / 51) as u8 + (b / 51) as u8
+                        16 + 36 * (r / 51) + 6 * (g / 51) + (b / 51)
                     });
                     if parameters[index] == 38 {
                         self.framebuffer.rendition.foreground = color;

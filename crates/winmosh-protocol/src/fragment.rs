@@ -446,8 +446,8 @@ mod tests {
             assert!(assembler.add_fragment(fragments[i].clone())?.is_none());
         }
         let mut result = None;
-        for i in 1..fragments.len() {
-            result = assembler.add_fragment(fragments[i].clone())?.or(result);
+        for frag in &fragments[1..] {
+            result = assembler.add_fragment(frag.clone())?.or(result);
         }
         assert_eq!(result, Some(instruction));
         Ok(())

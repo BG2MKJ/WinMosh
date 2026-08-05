@@ -111,28 +111,8 @@ impl UserStream {
         let mut instructions = Vec::new();
         let common_event_count = existing.events.len();
         for index in 0..common_event_count {
-            let same_length_last_event =
-                existing.events.len() == self.events.len() && index + 1 == existing.events.len();
-            let shorter_last_event =
-                existing.events.len() < self.events.len() && index + 1 == existing.events.len();
-            if same_length_last_event {
-                match (&existing.events[index], &self.events[index]) {
-                    (UserEvent::Bytes(existing_bytes), UserEvent::Bytes(current_bytes))
-                        if current_bytes.starts_with(existing_bytes) =>
-                    {
-                        append_keystrokes(
-                            &mut instructions,
-                            &current_bytes[existing_bytes.len()..],
-                        );
-                    }
-                    (existing_event, current_event) if existing_event == current_event => {}
-                    _ => {
-                        return Err(StateSyncError::InvalidDiff(
-                            "user stream base is not a prefix".to_owned(),
-                        ));
-                    }
-                }
-            } else if shorter_last_event {
+            let is_last_event = index + 1 == existing.events.len();
+            if is_last_event && existing.events.len() <= self.events.len() {
                 match (&existing.events[index], &self.events[index]) {
                     (UserEvent::Bytes(existing_bytes), UserEvent::Bytes(current_bytes))
                         if current_bytes.starts_with(existing_bytes) =>

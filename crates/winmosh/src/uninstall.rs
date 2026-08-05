@@ -31,7 +31,7 @@ pub fn run() -> Result<()> {
 
     let mut input = String::new();
     io::stdin().read_line(&mut input).ok();
-    if input.trim().to_ascii_lowercase() != "y" && input.trim().to_ascii_lowercase() != "yes" {
+    if !input.trim().eq_ignore_ascii_case("y") && !input.trim().eq_ignore_ascii_case("yes") {
         println!("cancelled");
         return Ok(());
     }
@@ -43,9 +43,9 @@ pub fn run() -> Result<()> {
         if !path.exists() {
             continue;
         }
-        let is_self = current.as_ref().map_or(false, |c| {
-            fs::canonicalize(c).ok() == fs::canonicalize(path).ok()
-        });
+        let is_self = current
+            .as_ref()
+            .is_some_and(|c| fs::canonicalize(c).ok() == fs::canonicalize(path).ok());
         if is_self {
             pending.push(path.to_string_lossy().replace('\'', "''"));
         } else {
@@ -108,7 +108,7 @@ pub fn run() -> Result<()> {
     Ok(())
 }
 
-fn remove_path_entry(dir: &PathBuf) {
+fn remove_path_entry(dir: &std::path::Path) {
     let escaped = dir.to_string_lossy().replace('\'', "''");
     let script = format!(
         "$path = [Environment]::GetEnvironmentVariable('Path', 'User'); \

@@ -187,7 +187,7 @@ fn run_interactive(global: &GlobalOptions, resolved: ResolvedTarget) -> Result<(
                         &ack,
                     )?;
                 }
-                if matches!(terminal_receiver.latest_state(), None) {
+                if terminal_receiver.latest_state().is_none() {
                     running = false;
                 }
             }
