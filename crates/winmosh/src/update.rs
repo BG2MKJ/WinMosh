@@ -235,18 +235,29 @@ fn self_replace(new_exe: &PathBuf) -> Result<()> {
             new_exe.display()
         )));
     }
+    let install_dir = current.parent().unwrap_or(&current);
+    let wm_path = install_dir.join("wm.exe");
+    let ver = env!("CARGO_PKG_VERSION");
+    let new_s = escape_ps_sq(&new_exe.to_string_lossy());
+    let target_s = escape_ps_sq(&current.to_string_lossy());
+    let wm_s = escape_ps_sq(&wm_path.to_string_lossy());
     let script = format!(
-        "$ErrorActionPreference='Stop'; \
-         Start-Sleep -Seconds 1; \
-         Copy-Item -Force '{}' '{}'; \
-         Remove-Item '{}' -Recurse -Force -ErrorAction SilentlyContinue; \
-         Write-Host 'WinMosh updated.' -ForegroundColor Green",
-        escape_ps_sq(&new_exe.to_string_lossy()),
-        escape_ps_sq(&current.to_string_lossy()),
-        escape_ps_sq(&new_exe.parent().unwrap_or(&current).to_string_lossy()),
+        "$ErrorActionPreference='SilentlyContinue'; \
+         Start-Sleep -Seconds 2; \
+         Copy-Item -Force '{new_s}' '{target_s}'; \
+         if (Test-Path '{wm_s}') {{ Copy-Item -Force '{new_s}' '{wm_s}' }}; \
+         Write-Host ''; \
+         Write-Host 'WinMosh updated to {ver}.' -ForegroundColor Green; \
+         Write-Host 'Restart your terminal or run: refreshenv' -ForegroundColor Yellow",
     );
-    run_powershell(&["-NoProfile", "-Command", &script])?;
-    println!("update applied, restart winmosh to use the new version");
+    let tmp_script = std::env::temp_dir().join("winmosh-update.ps1");
+    fs::write(&tmp_script, script.as_bytes())?;
+    std::process::Command::new("powershell.exe")
+        .args(["-NoProfile", "-WindowStyle", "Hidden", "-File"])
+        .arg(&tmp_script)
+        .spawn()
+        .ok();
+    println!("update will apply when this terminal is closed");
     Ok(())
 }
 
