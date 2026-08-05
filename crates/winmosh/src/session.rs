@@ -260,6 +260,21 @@ fn handle_input_event(
     timestamp_reply: u16,
 ) -> Result<bool> {
     match event {
+        Event::Paste(text) => {
+            if text.is_empty() {
+                return Ok(true);
+            }
+            let mut bytes = Vec::with_capacity(text.len() + 12);
+            bytes.extend_from_slice(b"\x1b[200~");
+            bytes.extend_from_slice(text.as_bytes());
+            bytes.extend_from_slice(b"\x1b[201~");
+            user_stream.push_input(UserInput::new(bytes));
+            user_sender.set_state(user_stream.clone());
+            let instruction = user_sender
+                .build_instruction(clock.timestamp())
+                .map_err(|error| Error::Protocol(error.to_string()))?;
+            send_state_instruction(transport, fragmenter, clock, timestamp_reply, &instruction)?;
+        }
         Event::Key(key) if key.kind == KeyEventKind::Press => {
             if is_local_quit(&key) {
                 return Ok(false);
