@@ -85,6 +85,8 @@ fn run_interactive(global: &GlobalOptions, resolved: ResolvedTarget) -> Result<(
     let mut user_sender = StateSyncSender::new(UserStream::default());
     user_sender.set_state(user_stream.clone());
     let mut last_remote_timestamp = 0_u16;
+    let mut last_received_at = clock.timestamp();
+    let mut connection_lost = false;
     let mut stdout = io::stdout();
     let _console = ConsoleGuard::enter()
         .map_err(|e| Error::Protocol(format!("console setup failed: {e}")))?;
@@ -126,6 +128,11 @@ fn run_interactive(global: &GlobalOptions, resolved: ResolvedTarget) -> Result<(
             }
             transport.note_roaming_source(source);
             last_remote_timestamp = received.datagram.timestamp;
+            last_received_at = clock.timestamp();
+            if connection_lost {
+                clear_status(&mut stdout, size.rows);
+                connection_lost = false;
+            }
             rtt.observe(Duration::from_millis(100));
             let maybe_instruction = assembler
                 .add_wire(&received.datagram.payload)
@@ -187,6 +194,12 @@ fn run_interactive(global: &GlobalOptions, resolved: ResolvedTarget) -> Result<(
                     running = false;
                 }
             }
+        }
+
+        let elapsed = clock.timestamp().saturating_sub(last_received_at);
+        if elapsed > 3000 && !connection_lost {
+            show_status(&mut stdout, size.rows, elapsed / 1000);
+            connection_lost = true;
         }
 
         let timeout_ms = rtt.timeout().0.as_millis() as u64;
@@ -379,6 +392,21 @@ fn control_byte(character: char) -> Option<u8> {
         b' ' => Some(0x00),
         _ => None,
     }
+}
+
+fn show_status(stdout: &mut io::Stdout, rows: u16, seconds: u64) {
+    let msg = format!(
+        "\x1b[s\x1b[{};1H\x1b[7m mosh: no response for {}s (Ctrl-^ . to quit) \x1b[0m\x1b[u",
+        rows, seconds
+    );
+    let _ = stdout.write_all(msg.as_bytes());
+    let _ = stdout.flush();
+}
+
+fn clear_status(stdout: &mut io::Stdout, rows: u16) {
+    let msg = format!("\x1b[s\x1b[{};1H\x1b[K\x1b[u", rows);
+    let _ = stdout.write_all(msg.as_bytes());
+    let _ = stdout.flush();
 }
 
 fn protocol_error(error: TransportError) -> Error {
