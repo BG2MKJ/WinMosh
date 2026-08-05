@@ -13,9 +13,16 @@ jobs:
   build:
     name: Build release artifact
     runs-on: windows-latest
+    env:
+      CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: rust-lld
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust GNU toolchain
+        run: |
+          rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal
+          rustup default stable-x86_64-pc-windows-gnu
+      - name: Verify toolchain
+        run: rustc --version --verbose
       - name: Build release binary
         run: cargo build --release -p winmosh
       - name: Package release assets
